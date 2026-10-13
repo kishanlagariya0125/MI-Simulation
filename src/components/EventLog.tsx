@@ -13,7 +13,7 @@ interface EventLogProps {
   onClearLog: () => void;
 }
 
-export const EventLog: React.FC<EventLogProps> = ({ events, onClearLog }) => {
+export const EventLog: React.FC<EventLogProps> = React.memo(({ events, onClearLog }) => {
   const [filter, setFilter] = useState<EventCategory | 'ALL'>('ALL');
   const [showClearConfirm, setShowClearConfirm] = useState(false);
 
@@ -205,4 +205,4 @@ export const EventLog: React.FC<EventLogProps> = ({ events, onClearLog }) => {
       </div>
     </div>
   );
-};
+});

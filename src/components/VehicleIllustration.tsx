@@ -10,7 +10,7 @@ interface VehicleIllustrationProps {
  * Top-down realistic 2D SVG illustrations for traffic simulation vehicles.
  * Includes passenger cars (sedans), SUVs, commercial delivery vans, and a distinct medical ambulance.
  */
-export const VehicleIllustration: React.FC<VehicleIllustrationProps> = ({
+export const VehicleIllustration: React.FC<VehicleIllustrationProps> = React.memo(({
   vehicle: v,
   isEmergencyActive = false,
 }) => {
@@ -32,7 +32,6 @@ export const VehicleIllustration: React.FC<VehicleIllustrationProps> = ({
   return (
     <g
       transform={`translate(${v.x}, ${v.y}) rotate(${angle})`}
-      style={{ transition: 'transform 0.05s linear' }}
     >
       {/* 1. SOFT UNDERBODY SHADOW */}
       <rect
@@ -354,4 +353,4 @@ export const VehicleIllustration: React.FC<VehicleIllustrationProps> = ({
       )}
     </g>
   );
-};
+});

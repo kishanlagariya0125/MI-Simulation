@@ -16,7 +16,7 @@ interface StatisticsPanelProps {
   onResetStats: () => void;
 }
 
-export const StatisticsPanel: React.FC<StatisticsPanelProps> = ({
+export const StatisticsPanel: React.FC<StatisticsPanelProps> = React.memo(({
   statistics,
   onResetStats,
 }) => {
@@ -233,4 +233,4 @@ export const StatisticsPanel: React.FC<StatisticsPanelProps> = ({
       </div>
     </div>
   );
-};
+});

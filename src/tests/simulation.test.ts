@@ -320,4 +320,117 @@ describe('Smart Ambulance Traffic Light Controller - Automated Test Suite', () =
     expect(snap.statistics.totalAmbulance).toBe(1);
     expect(snap.eventLog.length).toBeGreaterThan(0);
   });
+
+  // TEST N — CONTINUOUS VEHICLE MOVEMENT & DELTA-TIME
+  it('TEST N — CONTINUOUS VEHICLE MOVEMENT: updates positions smoothly via delta-time without jumps', () => {
+    engine.start();
+    const sm = engine.getStateMachine();
+    sm.transitionTo('NS_GREEN', 8.0, 1.0);
+
+    // Simulate multiple physics frames over 2 seconds (120 frames at 16.6ms)
+    for (let f = 0; f < 120; f++) {
+      engine['updateVehicleSpawning'](0.0166);
+      engine['updateVehiclesPhysics'](0.0166);
+    }
+
+    const snap = engine.getSnapshot();
+    expect(snap.vehicles.length).toBeGreaterThan(0);
+
+    // Verify all vehicles have valid coordinates and non-zero target speeds
+    for (const v of snap.vehicles) {
+      expect(Number.isFinite(v.x)).toBe(true);
+      expect(Number.isFinite(v.y)).toBe(true);
+      expect(v.targetSpeed).toBeGreaterThan(0);
+      expect(v.speed).toBeGreaterThanOrEqual(0);
+    }
+  });
+
+  // TEST O — STOP LINE COMPLIANCE ON RED LIGHT
+  it('TEST O — STOP LINE COMPLIANCE: vehicles stop strictly before stop line on RED', () => {
+    engine.start();
+    const sm = engine.getStateMachine();
+    // Set NS to RED (ALL_RED phase)
+    sm.transitionTo('ALL_RED', 5.0, 1.0);
+
+    // Run physics simulation for several seconds
+    for (let f = 0; f < 100; f++) {
+      engine['updateVehicleSpawning'](0.05);
+      engine['updateVehiclesPhysics'](0.05);
+    }
+
+    const snap = engine.getSnapshot();
+    const northVehicles = snap.vehicles.filter((v) => v.direction === 'NORTH');
+
+    // For any vehicle that approached stop line on RED, its front bumper must not cross 210
+    for (const v of northVehicles) {
+      if (!v.hasCrossed) {
+        const frontBumper = v.y + v.length / 2;
+        expect(frontBumper).toBeLessThanOrEqual(210);
+      }
+    }
+  });
+
+  // TEST P — VEHICLE QUEUING AND SPACING
+  it('TEST P — VEHICLE QUEUING: maintains safe bumper gap and never overlaps', () => {
+    engine.start();
+    const sm = engine.getStateMachine();
+    sm.transitionTo('ALL_RED', 10.0, 1.0);
+
+    // Advance simulation to accumulate queued cars at red light
+    for (let f = 0; f < 150; f++) {
+      engine['updateVehicleSpawning'](0.05);
+      engine['updateVehiclesPhysics'](0.05);
+    }
+
+    const snap = engine.getSnapshot();
+    const byDir = ['NORTH', 'SOUTH', 'EAST', 'WEST'] as const;
+
+    for (const dir of byDir) {
+      const queue = snap.vehicles.filter((v) => v.direction === dir);
+      if (queue.length > 1) {
+        // Sort by position along road
+        if (dir === 'NORTH') queue.sort((a, b) => b.y - a.y);
+        if (dir === 'SOUTH') queue.sort((a, b) => a.y - b.y);
+        if (dir === 'WEST') queue.sort((a, b) => b.x - a.x);
+        if (dir === 'EAST') queue.sort((a, b) => a.x - b.x);
+
+        for (let i = 1; i < queue.length; i++) {
+          const lead = queue[i - 1];
+          const follower = queue[i];
+          let gap = 0;
+          if (dir === 'NORTH') gap = (lead.y - lead.length / 2) - (follower.y + follower.length / 2);
+          if (dir === 'SOUTH') gap = (follower.y - follower.length / 2) - (lead.y + lead.length / 2);
+          if (dir === 'WEST') gap = (lead.x - lead.length / 2) - (follower.x + follower.length / 2);
+          if (dir === 'EAST') gap = (follower.x - follower.length / 2) - (lead.x + lead.length / 2);
+
+          // Gap between stopped cars must be at least 15px (safe buffer)
+          expect(gap).toBeGreaterThanOrEqual(15);
+        }
+      }
+    }
+  });
+
+  // TEST Q — AMBULANCE EMERGENCY MOVEMENT
+  it('TEST Q — AMBULANCE EMERGENCY MOVEMENT: moves and clears intersection with priority', () => {
+    engine.start();
+    engine.requestAmbulance('NORTH');
+    const sm = engine.getStateMachine();
+
+    // Advance through initial ALL_RED (1s) to trigger EMERGENCY_PRIORITY for NORTH
+    sm.tick(1.1, 1.1);
+    expect(engine.getSnapshot().signals.emergencyActive).toBe(true);
+    expect(engine.getSnapshot().activeEmergencyDirection).toBe('NORTH');
+
+    // Step physics and spawning forward
+    for (let f = 0; f < 60; f++) {
+      engine['updateVehicleSpawning'](0.05);
+      engine['updateVehiclesPhysics'](0.05);
+    }
+
+    const snap = engine.getSnapshot();
+    const ambulance = snap.vehicles.find((v) => v.isAmbulance);
+    expect(ambulance).toBeDefined();
+    expect(ambulance?.direction).toBe('NORTH');
+    expect(ambulance?.speed).toBeGreaterThan(0);
+  });
 });

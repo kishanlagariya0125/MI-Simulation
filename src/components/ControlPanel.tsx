@@ -34,7 +34,7 @@ interface ControlPanelProps {
   onRequestPedestrian: () => void;
 }
 
-export const ControlPanel: React.FC<ControlPanelProps> = ({
+export const ControlPanel: React.FC<ControlPanelProps> = React.memo(({
   mode,
   density,
   phase,
@@ -426,4 +426,4 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
 
     </div>
   );
-};
+});

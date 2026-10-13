@@ -8,7 +8,7 @@ interface WorkflowTimelineProps {
   nextPlannedPhase: SimulationPhase | null;
 }
 
-export const WorkflowTimeline: React.FC<WorkflowTimelineProps> = ({
+export const WorkflowTimeline: React.FC<WorkflowTimelineProps> = React.memo(({
   currentPhase,
   phaseRemainingTime,
   nextPlannedPhase,
@@ -186,4 +186,4 @@ export const WorkflowTimeline: React.FC<WorkflowTimelineProps> = ({
       </div>
     </div>
   );
-};
+});

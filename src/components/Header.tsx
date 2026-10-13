@@ -29,7 +29,7 @@ interface HeaderProps {
   onOpenAssemblyModal: () => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({
+export const Header: React.FC<HeaderProps> = React.memo(({
   status,
   mode,
   simTime,
@@ -277,4 +277,4 @@ export const Header: React.FC<HeaderProps> = ({
       </div>
     </header>
   );
-};
+});

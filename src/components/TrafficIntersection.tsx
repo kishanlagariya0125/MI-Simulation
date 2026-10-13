@@ -19,7 +19,7 @@ interface TrafficIntersectionProps {
   activeEmergencyDirection: Direction | null;
 }
 
-export const TrafficIntersection: React.FC<TrafficIntersectionProps> = ({
+export const TrafficIntersection: React.FC<TrafficIntersectionProps> = React.memo(({
   phase,
   phaseRemainingTime,
   signals,
@@ -384,4 +384,4 @@ export const TrafficIntersection: React.FC<TrafficIntersectionProps> = ({
       </div>
     </div>
   );
-};
+});
